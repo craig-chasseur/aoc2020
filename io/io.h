@@ -20,7 +20,7 @@ absl::StatusOr<std::vector<std::string>> ReadLinesFromFile(
 // Returns comma-delimited strings from `filename`, or an error if the file
 // could not be read.
 absl::StatusOr<std::vector<std::string>> ReadCommaDelimitedFile(
-    const char* file);
+    const char* filename);
 
 }  // namespace aoc2020
 

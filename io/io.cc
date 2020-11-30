@@ -48,8 +48,8 @@ absl::StatusOr<std::vector<std::string>> ReadLinesFromFile(
 }
 
 absl::StatusOr<std::vector<std::string>> ReadCommaDelimitedFile(
-    const char* file) {
-  absl::StatusOr<std::string> maybe_contents = ReadFile(file);
+    const char* filename) {
+  absl::StatusOr<std::string> maybe_contents = ReadFile(filename);
   if (!maybe_contents.ok()) return maybe_contents.status();
   return absl::StrSplit(*maybe_contents, ',');
 }
