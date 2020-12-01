@@ -11,7 +11,8 @@
 namespace {
 
 std::vector<int> GetItems(const char* filename) {
-  absl::StatusOr<std::vector<std::string>> lines = aoc2020::ReadLinesFromFile(filename);
+  absl::StatusOr<std::vector<std::string>> lines =
+      aoc2020::ReadLinesFromFile(filename);
   assert(lines.ok());
   std::vector<int> items;
   for (const std::string& line : *lines) {
