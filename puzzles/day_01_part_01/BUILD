@@ -4,7 +4,7 @@ cc_binary(
     name = "main",
     srcs = ["main.cc"],
     deps = [
-        "//io",
+        "//util:io",
         "@com_google_absl//absl/status:statusor",
         "@com_google_absl//absl/strings",
     ],

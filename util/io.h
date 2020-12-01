@@ -1,5 +1,5 @@
-#ifndef IO_IO_H_
-#define IO_IO_H_
+#ifndef UTIL_IO_H_
+#define UTIL_IO_H_
 
 #include <string>
 #include <vector>
@@ -24,4 +24,4 @@ absl::StatusOr<std::vector<std::string>> ReadCommaDelimitedFile(
 
 }  // namespace aoc2020
 
-#endif  // IO_IO_H_
+#endif  // UTIL_IO_H_
