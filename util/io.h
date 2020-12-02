@@ -1,10 +1,13 @@
 #ifndef UTIL_IO_H_
 #define UTIL_IO_H_
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
+#include "absl/status/status.h"
 #include "absl/status/statusor.h"
+#include "absl/strings/numbers.h"
 
 namespace aoc2020 {
 
@@ -21,6 +24,19 @@ absl::StatusOr<std::vector<std::string>> ReadLinesFromFile(
 // could not be read.
 absl::StatusOr<std::vector<std::string>> ReadCommaDelimitedFile(
     const char* filename);
+
+template <typename IntType = int>
+absl::StatusOr<std::vector<IntType>> ParseIntegers(
+    const std::vector<std::string>& strings) {
+  std::vector<IntType> integers(strings.size(), 0);
+  for (std::size_t idx = 0; idx < strings.size(); ++idx) {
+    if (!absl::SimpleAtoi(strings[idx], &(integers[idx]))) {
+      return absl::Status(absl::StatusCode::kInvalidArgument,
+                          "Failed to parse int from string");
+    }
+  }
+  return integers;
+}
 
 }  // namespace aoc2020
 
