@@ -1,7 +1,7 @@
 #include <algorithm>
 #include <cstdio>
+#include <string>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "util/check.h"
 #include "util/io.h"
@@ -22,12 +22,12 @@ struct Password {
 };
 
 Password ParsePassword(absl::string_view password_str) {
-  auto password_buffer = absl::make_unique<char[]>(password_str.length() + 1);
   Password result;
-  CHECK(4 == sscanf(password_str.data(), "%u-%u %c: %s", &result.min,
-                    &result.max, &result.validated_char,
-                    password_buffer.get()));
-  result.password = password_buffer.get();
+  aoc2020::SubstringScanHelper pw_helper(password_str);
+  CHECK(3 == sscanf(password_str.data(), "%u-%u %c: " SUBSTRING_FMT,
+                    &result.min, &result.max, &result.validated_char,
+                    pw_helper.FirstParam(), pw_helper.SecondParam()));
+  result.password = pw_helper.Result();
   return result;
 }
 
