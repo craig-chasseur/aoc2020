@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstdio>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "util/check.h"
 #include "util/io.h"
@@ -9,8 +10,8 @@ namespace {
 
 struct Password {
   bool IsValid() const {
-    const bool min_match = password[min-1] == validated_char;
-    const bool max_match = password[max-1] == validated_char;
+    const bool min_match = password[min - 1] == validated_char;
+    const bool max_match = password[max - 1] == validated_char;
     return min_match ^ max_match;
   }
 
@@ -21,11 +22,12 @@ struct Password {
 };
 
 Password ParsePassword(absl::string_view password_str) {
-  char password_buffer[128];
+  auto password_buffer = absl::make_unique<char[]>(password_str.length() + 1);
   Password result;
   CHECK(4 == sscanf(password_str.data(), "%u-%u %c: %s", &result.min,
-                    &result.max, &result.validated_char, password_buffer));
-  result.password = password_buffer;
+                    &result.max, &result.validated_char,
+                    password_buffer.get()));
+  result.password = password_buffer.get();
   return result;
 }
 
