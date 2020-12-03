@@ -51,6 +51,22 @@ def _impl(ctx):
 
     features = [
         feature(
+            name = "default_cpp_flags",
+            enabled = True,
+            flag_sets = [
+                flag_set(
+                    actions = [ACTION_NAMES.cpp_compile],
+                    flag_groups = ([
+                        flag_group(
+                            flags = [
+                                "-std=c++17",
+                            ],
+                        ),
+                    ]),
+                ),
+            ],
+        ),
+        feature(
             name = "default_linker_flags",
             enabled = True,
             flag_sets = [
