@@ -1,4 +1,4 @@
 -xc++
--I/home/craig/code/abseil-cpp
 -I/home/craig/code/aoc2020
+-I/home/craig/code/third_party/abseil-cpp
 -std=c++17
