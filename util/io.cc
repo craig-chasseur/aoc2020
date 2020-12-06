@@ -43,4 +43,23 @@ std::vector<std::string> ReadCommaDelimitedFile(const char* filename) {
   return absl::StrSplit(contents, ',');
 }
 
+std::vector<std::vector<std::string>> SplitByEmptyStrings(
+    std::vector<std::string> strs) {
+  std::vector<std::vector<std::string>> splits;
+  std::vector<std::string> current_split;
+  for (std::string& str : strs) {
+    if (!str.empty()) {
+      current_split.emplace_back(std::move(str));
+      continue;
+    }
+
+    if (current_split.empty()) continue;
+
+    splits.emplace_back(std::move(current_split));
+    current_split.clear();
+  }
+  if (!current_split.empty()) splits.emplace_back(std::move(current_split));
+  return splits;
+}
+
 }  // namespace aoc2020

@@ -1,6 +1,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <utility>
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
@@ -46,23 +47,14 @@ const absl::flat_hash_map<std::string, std::uint8_t>* PassportFields::fields_ =
 int main(int argc, char** argv) {
   CHECK(argc == 2);
   std::vector<std::string> lines = aoc2020::ReadLinesFromFile(argv[1]);
+  std::vector<std::vector<std::string>> passport_strs =
+      aoc2020::SplitByEmptyStrings(std::move(lines));
 
   int valid_passports = 0;
-  std::size_t min_line = 0;
-  for (std::size_t max_line = 0; max_line < lines.size(); ++max_line) {
-    if (lines[max_line].empty()) {
-      PassportFields fields(
-          absl::MakeSpan(lines).subspan(min_line, max_line - min_line));
-      valid_passports += fields.IsValid();
-      min_line = max_line;
-    }
+  for (const std::vector<std::string> passport_desc : passport_strs) {
+    valid_passports += PassportFields(passport_desc).IsValid();
   }
-
-  if (min_line != lines.size() - 1) {
-    PassportFields fields(absl::MakeSpan(lines).subspan(min_line));
-    valid_passports += fields.IsValid();
-  }
-
   std::cout << valid_passports << "\n";
+
   return 0;
 }

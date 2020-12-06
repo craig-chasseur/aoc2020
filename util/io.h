@@ -29,6 +29,9 @@ std::vector<IntType> ParseIntegers(const std::vector<std::string>& strings) {
   return integers;
 }
 
+std::vector<std::vector<std::string>> SplitByEmptyStrings(
+    std::vector<std::string> strs);
+
 #define SUBSTRING_FMT "%zn%*s%zn"
 
 // A helper for use with sscanf to read a substring as an absl::string_view
