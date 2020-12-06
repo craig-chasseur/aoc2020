@@ -3,18 +3,92 @@
 #include <cstdint>
 #include <iostream>
 
-#include "absl/container/flat_hash_set.h"
-#include "absl/strings/ascii.h"
-#include "absl/strings/match.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
-#include "absl/types/optional.h"
 #include "absl/types/span.h"
+#include "re2/re2.h"
 #include "util/check.h"
 #include "util/io.h"
 
 namespace {
+
+class FieldValidator {
+ public:
+  std::uint8_t Validate(absl::string_view value) const {
+    return IsValid(value) ? check_bit_ : 0;
+  }
+
+ protected:
+  explicit FieldValidator(int bit_position) : check_bit_(1 << bit_position) {}
+
+ private:
+  virtual bool IsValid(absl::string_view value) const = 0;
+
+  std::uint8_t check_bit_;
+};
+
+class NoopFieldValidator final : public FieldValidator {
+ public:
+  explicit NoopFieldValidator(int bit_position)
+      : FieldValidator(bit_position) {}
+
+ private:
+  bool IsValid(absl::string_view) const override { return true; }
+};
+
+class IntFieldValidator final : public FieldValidator {
+ public:
+  explicit IntFieldValidator(int bit_position, int min, int max)
+      : FieldValidator(bit_position), min_(min), max_(max) {}
+
+ private:
+  bool IsValid(absl::string_view value) const override {
+    int parsed = 0;
+    if (!absl::SimpleAtoi(value, &parsed)) return false;
+    return (min_ <= parsed) && (parsed <= max_);
+  }
+
+  int min_;
+  int max_;
+};
+
+class RegexFieldValidator final : public FieldValidator {
+ public:
+  explicit RegexFieldValidator(int bit_position, absl::string_view pattern)
+      : FieldValidator(bit_position), pattern_(pattern) {
+    CHECK(pattern_.ok());
+  }
+
+ private:
+  bool IsValid(absl::string_view value) const override {
+    return re2::RE2::FullMatch(value, pattern_);
+  }
+
+  re2::RE2 pattern_;
+};
+
+class HgtFieldValidator final : public FieldValidator {
+ public:
+  explicit HgtFieldValidator(int bit_position) : FieldValidator(bit_position) {
+    CHECK(pattern_.ok());
+  }
+
+ private:
+  bool IsValid(absl::string_view value) const override {
+    int height = 0;
+    std::string units;
+    if (!re2::RE2::FullMatch(value, pattern_, &height, &units)) return false;
+    if (units == "cm") {
+      return (150 <= height) && (height <= 193);
+    }
+    CHECK(units == "in");
+    return (59 <= height) && (height <= 76);
+  }
+
+  re2::RE2 pattern_{"([[:digit:]]+)(cm|in)"};
+};
 
 class PassportFields {
  public:
@@ -25,7 +99,9 @@ class PassportFields {
         const absl::string_view field = field_value.substr(0, 3);
         CHECK(field_value[3] == ':');
         const absl::string_view value = field_value.substr(4);
-        ValidateField(field, value);
+        auto iter = validators_->find(field);
+        CHECK(iter != validators_->end());
+        rep_ |= iter->second->Validate(value);
       }
     }
   }
@@ -36,127 +112,22 @@ class PassportFields {
   }
 
  private:
-  void ValidateField(absl::string_view field, absl::string_view value) {
-    if (field == "byr") {
-      if (ValidByr(value)) {
-        rep_ |= (1 << 0);
-      }
-      return;
-    }
-
-    if (field == "iyr") {
-      if (ValidIyr(value)) {
-        rep_ |= (1 << 1);
-      }
-      return;
-    }
-
-    if (field == "eyr") {
-      if (ValidEyr(value)) {
-        rep_ |= (1 << 2);
-      }
-      return;
-    }
-
-    if (field == "hgt") {
-      if (ValidHgt(value)) {
-        rep_ |= (1 << 3);
-      }
-      return;
-    }
-
-    if (field == "hcl") {
-      if (ValidHcl(value)) {
-        rep_ |= (1 << 4);
-      }
-      return;
-    }
-
-    if (field == "ecl") {
-      if (ValidEcl(value)) {
-        rep_ |= (1 << 5);
-      }
-      return;
-    }
-
-    if (field == "pid") {
-      if (ValidPid(value)) {
-        rep_ |= (1 << 6);
-      }
-      return;
-    }
-
-    if (field == "cid") return;
-    CHECK_FAIL();
-  }
-
-  static absl::optional<int> ParseInt(absl::string_view year_str) {
-    int parsed = 0;
-    if (!absl::SimpleAtoi(year_str, &parsed)) return absl::nullopt;
-    return parsed;
-  }
-
-  static bool ValidByr(absl::string_view value) {
-    absl::optional<int> year = ParseInt(value);
-    return year.has_value() && (*year >= 1920) && (*year <= 2002);
-  }
-
-  static bool ValidIyr(absl::string_view value) {
-    absl::optional<int> year = ParseInt(value);
-    return year.has_value() && (*year >= 2010) && (*year <= 2020);
-  }
-
-  static bool ValidEyr(absl::string_view value) {
-    absl::optional<int> year = ParseInt(value);
-    return year.has_value() && (*year >= 2020) && (*year <= 2030);
-  }
-
-  static bool ValidHgt(absl::string_view value) {
-    if (absl::EndsWith(value, "cm")) {
-      value.remove_suffix(2);
-      absl::optional<int> height_cm = ParseInt(value);
-      return height_cm.has_value() && (*height_cm >= 150) &&
-             (*height_cm <= 193);
-    }
-
-    if (absl::EndsWith(value, "in")) {
-      value.remove_suffix(2);
-      absl::optional<int> height_in = ParseInt(value);
-      return height_in.has_value() && (*height_in >= 59) && (*height_in <= 76);
-    }
-
-    return false;
-  }
-
-  static bool ValidHcl(absl::string_view value) {
-    if (value.size() != 7) return false;
-    if (value[0] != '#') return false;
-    for (char c : value.substr(1)) {
-      if (!absl::ascii_isxdigit(c)) return false;
-    }
-    return true;
-  }
-
-  static bool ValidEcl(absl::string_view value) {
-    return valid_eyecolors_->contains(value);
-  }
-
-  static bool ValidPid(absl::string_view value) {
-    if (value.size() != 9) return false;
-    for (char c : value) {
-      if (!std::isdigit(c)) return false;
-    }
-    return true;
-  }
-
-  static const absl::flat_hash_set<std::string>* valid_eyecolors_;
+  static const absl::flat_hash_map<std::string, FieldValidator*>* validators_;
 
   std::uint8_t rep_ = 0;
 };
 
-const absl::flat_hash_set<std::string>* PassportFields::valid_eyecolors_ =
-    new absl::flat_hash_set<std::string>{"amb", "blu", "brn", "gry",
-                                         "grn", "hzl", "oth"};
+const absl::flat_hash_map<std::string, FieldValidator*>*
+    PassportFields::validators_ =
+        new absl::flat_hash_map<std::string, FieldValidator*>{
+            {"byr", new IntFieldValidator(0, 1920, 2002)},
+            {"iyr", new IntFieldValidator(1, 2010, 2020)},
+            {"eyr", new IntFieldValidator(2, 2020, 2030)},
+            {"hgt", new HgtFieldValidator(3)},
+            {"hcl", new RegexFieldValidator(4, "#[[:xdigit:]]{6}")},
+            {"ecl", new RegexFieldValidator(5, "amb|blu|brn|gry|grn|hzl|oth")},
+            {"pid", new RegexFieldValidator(6, "[[:digit:]]{9}")},
+            {"cid", new NoopFieldValidator(7)}};
 
 }  // namespace
 
