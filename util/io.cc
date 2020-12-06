@@ -6,19 +6,14 @@
 #include <utility>
 #include <vector>
 
-#include "absl/status/status.h"
-#include "absl/status/statusor.h"
-#include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "util/check.h"
 
 namespace aoc2020 {
 
-absl::StatusOr<std::string> ReadFile(const char* filename) {
+std::string ReadFile(const char* filename) {
   std::ifstream stream(filename);
-  if (!stream) {
-    return absl::Status(absl::StatusCode::kNotFound,
-                        absl::StrCat("Unable to open file: ", filename));
-  }
+  CHECK(stream);
 
   std::string buffer;
   stream.seekg(0, std::ios::end);
@@ -30,13 +25,9 @@ absl::StatusOr<std::string> ReadFile(const char* filename) {
   return buffer;
 }
 
-absl::StatusOr<std::vector<std::string>> ReadLinesFromFile(
-    const char* filename) {
+std::vector<std::string> ReadLinesFromFile(const char* filename) {
   std::ifstream stream(filename);
-  if (!stream) {
-    return absl::Status(absl::StatusCode::kNotFound,
-                        absl::StrCat("Unable to open file: ", filename));
-  }
+  CHECK(stream);
 
   std::vector<std::string> all_lines;
   std::string line;
@@ -47,11 +38,9 @@ absl::StatusOr<std::vector<std::string>> ReadLinesFromFile(
   return all_lines;
 }
 
-absl::StatusOr<std::vector<std::string>> ReadCommaDelimitedFile(
-    const char* filename) {
-  absl::StatusOr<std::string> maybe_contents = ReadFile(filename);
-  if (!maybe_contents.ok()) return maybe_contents.status();
-  return absl::StrSplit(*maybe_contents, ',');
+std::vector<std::string> ReadCommaDelimitedFile(const char* filename) {
+  std::string contents = ReadFile(filename);
+  return absl::StrSplit(contents, ',');
 }
 
 }  // namespace aoc2020

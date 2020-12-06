@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 
-#include "absl/status/statusor.h"
 #include "util/check.h"
 #include "util/io.h"
 
@@ -26,13 +25,9 @@ int Solve(const std::vector<int>& items) {
 int main(int argc, char** argv) {
   CHECK(argc == 2);
 
-  absl::StatusOr<std::vector<std::string>> maybe_lines =
-      aoc2020::ReadLinesFromFile(argv[1]);
-  CHECK_OK(maybe_lines);
-  absl::StatusOr<std::vector<int>> maybe_items =
-      aoc2020::ParseIntegers(*maybe_lines);
-  CHECK_OK(maybe_items);
+  std::vector<std::string> lines = aoc2020::ReadLinesFromFile(argv[1]);
+  std::vector<int> items = aoc2020::ParseIntegers(lines);
 
-  std::cout << Solve(*maybe_items) << "\n";
+  std::cout << Solve(items) << "\n";
   return 0;
 }

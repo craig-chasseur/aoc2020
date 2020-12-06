@@ -6,6 +6,5 @@ cc_binary(
     deps = [
         "//util:check",
         "//util:io",
-        "@com_google_absl//absl/status:statusor",
     ],
 )

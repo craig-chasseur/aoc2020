@@ -37,11 +37,10 @@ Password ParsePassword(absl::string_view password_str) {
 int main(int argc, char** argv) {
   CHECK(argc == 2);
 
-  auto maybe_lines = aoc2020::ReadLinesFromFile(argv[1]);
-  CHECK_OK(maybe_lines);
+  std::vector<std::string> lines = aoc2020::ReadLinesFromFile(argv[1]);
 
   int num_valid = 0;
-  for (const std::string& password_line : *maybe_lines) {
+  for (const std::string& password_line : lines) {
     num_valid += ParsePassword(password_line).IsValid();
   }
   std::cout << num_valid << "\n";

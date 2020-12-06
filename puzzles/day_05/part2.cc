@@ -1,5 +1,7 @@
 #include <algorithm>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "absl/strings/string_view.h"
 #include "util/check.h"
@@ -32,12 +34,11 @@ unsigned ParseSeat(absl::string_view seat) {
 
 int main(int argc, char** argv) {
   CHECK(argc == 2);
-  auto maybe_lines = aoc2020::ReadLinesFromFile(argv[1]);
-  CHECK_OK(maybe_lines);
+  std::vector<std::string> lines = aoc2020::ReadLinesFromFile(argv[1]);
 
   std::vector<unsigned> seats;
-  seats.reserve(maybe_lines->size());
-  for (const absl::string_view line : *maybe_lines) {
+  seats.reserve(lines.size());
+  for (const absl::string_view line : lines) {
     seats.push_back(ParseSeat(line));
   }
 

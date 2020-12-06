@@ -2,6 +2,8 @@
 #include <cstddef>
 #include <cstdint>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/numbers.h"
@@ -133,22 +135,21 @@ const absl::flat_hash_map<std::string, FieldValidator*>*
 
 int main(int argc, char** argv) {
   CHECK(argc == 2);
-  auto maybe_lines = aoc2020::ReadLinesFromFile(argv[1]);
-  CHECK_OK(maybe_lines);
+  std::vector<std::string> lines = aoc2020::ReadLinesFromFile(argv[1]);
 
   int valid_passports = 0;
   std::size_t min_line = 0;
-  for (std::size_t max_line = 0; max_line < maybe_lines->size(); ++max_line) {
-    if ((*maybe_lines)[max_line].empty()) {
+  for (std::size_t max_line = 0; max_line < lines.size(); ++max_line) {
+    if (lines[max_line].empty()) {
       PassportFields fields(
-          absl::MakeSpan(*maybe_lines).subspan(min_line, max_line - min_line));
+          absl::MakeSpan(lines).subspan(min_line, max_line - min_line));
       valid_passports += fields.IsValid();
       min_line = max_line;
     }
   }
 
-  if (min_line != maybe_lines->size() - 1) {
-    PassportFields fields(absl::MakeSpan(*maybe_lines).subspan(min_line));
+  if (min_line != lines.size() - 1) {
+    PassportFields fields(absl::MakeSpan(lines).subspan(min_line));
     valid_passports += fields.IsValid();
   }
 
