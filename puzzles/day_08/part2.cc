@@ -1,5 +1,6 @@
 #include <cstdio>
 #include <cstring>
+#include <utility>
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
@@ -101,7 +102,7 @@ int main(int argc, char** argv) {
     program.push_back(ParseInstruction(line));
   }
 
-  std::cout << TryAllOpcodeFlips(program) << "\n";
+  std::cout << TryAllOpcodeFlips(std::move(program)) << "\n";
 
   return 0;
 }
