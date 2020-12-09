@@ -1,4 +1,4 @@
-"""LLVM-based build configuration"""
+"""LLVM-based build configuration for LLVM 11 on Debian."""
 
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 load(
@@ -19,19 +19,19 @@ def _impl(ctx):
     tool_paths = [
         tool_path(
             name = "gcc",
-            path = "/usr/lib/llvm/11/bin/clang",
+            path = "/usr/lib/llvm-11/bin/clang",
         ),
         tool_path(
             name = "ld",
-            path = "/usr/bin/ld.lld",
+            path = "/usr/lib/llvm-11/bin/ld.lld",
         ),
         tool_path(
             name = "ar",
-            path = "/usr/lib/llvm/11/bin/llvm-ar",
+            path = "/usr/lib/llvm-11/bin/llvm-ar",
         ),
         tool_path(
             name = "cpp",
-            path = "/usr/lib/llvm/11/bin/clang-cpp",
+            path = "/usr/lib/llvm-11/bin/clang-cpp",
         ),
         tool_path(
             name = "gcov",
@@ -39,7 +39,7 @@ def _impl(ctx):
         ),
         tool_path(
             name = "nm",
-            path = "/usr/lib/llvm/11/bin/llvm-nm",
+            path = "/usr/lib/llvm-11/bin/llvm-nm",
         ),
         tool_path(
             name = "objdump",
@@ -47,7 +47,7 @@ def _impl(ctx):
         ),
         tool_path(
             name = "strip",
-            path = "/usr/lib/llvm/11/bin/llvm-strip",
+            path = "/usr/lib/llvm-11/bin/llvm-strip",
         ),
     ]
 
@@ -62,6 +62,7 @@ def _impl(ctx):
                         flag_group(
                             flags = [
                                 "-std=c++17",
+                                "-stdlib=libc++",
                             ],
                         ),
                     ]),
@@ -92,8 +93,9 @@ def _impl(ctx):
         ctx = ctx,
         features = features,
         cxx_builtin_include_directories = [
-            "/usr/lib/clang/11.0.0/include",
             "/usr/include",
+            "/usr/lib/llvm-11/include/c++/v1/",
+            "/usr/lib/llvm-11/lib/clang/11.0.1/include",
         ],
         toolchain_identifier = "local",
         host_system_name = "local",
@@ -106,7 +108,7 @@ def _impl(ctx):
         tool_paths = tool_paths,
     )
 
-cc_toolchain_config = rule(
+cc_toolchain_config_llvm_11_debian = rule(
     implementation = _impl,
     attrs = {},
     provides = [CcToolchainConfigInfo],
