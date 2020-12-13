@@ -71,12 +71,12 @@ int main(int argc, char** argv) {
   std::int64_t result = 0;
   for (const BusConstraints& bus : bus_constraints) {
     std::int64_t partial_product = product / bus.id;
-    result +=
-        bus.offset * ModInverse(partial_product, bus.id) * partial_product;
+    result += (bus.id - bus.offset) * ModInverse(partial_product, bus.id) *
+              partial_product;
   }
   result %= product;
 
-  std::cout << (product - result) << "\n";
+  std::cout << result << "\n";
 
   return 0;
 }
