@@ -5,7 +5,6 @@
 #include <utility>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_split.h"
@@ -91,12 +90,8 @@ class Ticket {
 bool Rule::ValidInPosition(int position,
                            absl::Span<const Ticket> tickets) const {
   for (const Ticket& ticket : tickets) {
-    const int value = ticket.ValueNum(position);
-    const bool valid = (min_a_ <= value && value <= max_a_) ||
-                       (min_b_ <= value && value <= max_b_);
-    if (!valid) return false;
+    if (!CheckValue(ticket.ValueNum(position))) return false;
   }
-
   return true;
 }
 
@@ -109,34 +104,31 @@ void Rule::ComputeValidPositions(const int num_positions,
   CHECK(!valid_positions_.empty());
 }
 
-bool FindOrderImpl(absl::Span<const Rule> remaining_rules,
-                   absl::flat_hash_map<int, const Rule*>* rule_assignments) {
+bool FindOrderImpl(absl::Span<Rule> remaining_rules,
+                   std::vector<Rule*>* rule_assignments) {
   if (remaining_rules.empty()) return true;
 
-  const Rule& current_rule = remaining_rules.front();
+  Rule& current_rule = remaining_rules.front();
   for (const int candidate_position : current_rule.valid_positions()) {
-    auto [_, inserted] =
-        rule_assignments->try_emplace(candidate_position, &current_rule);
-    if (!inserted) continue;
+    if ((*rule_assignments)[candidate_position] != nullptr) continue;
+    (*rule_assignments)[candidate_position] = &current_rule;
     if (FindOrderImpl(remaining_rules.subspan(1), rule_assignments)) {
       return true;
     }
-    CHECK(1 == rule_assignments->erase(candidate_position));
+    (*rule_assignments)[candidate_position] = nullptr;
   }
 
   return false;
 }
 
-std::vector<Rule> FindOrder(absl::Span<const Rule> rules) {
-  absl::flat_hash_map<int, const Rule*> rule_assignments;
-  CHECK(FindOrderImpl(rules, &rule_assignments));
-  CHECK(rule_assignments.size() == rules.size());
+std::vector<Rule> FindOrder(std::vector<Rule> rules) {
+  std::vector<Rule*> rule_assignments(rules.size(), nullptr);
+  CHECK(FindOrderImpl(absl::MakeSpan(rules), &rule_assignments));
 
   std::vector<Rule> ordered_rules;
   for (int i = 0; i < rules.size(); ++i) {
-    auto iter = rule_assignments.find(i);
-    CHECK(iter != rule_assignments.end());
-    ordered_rules.emplace_back(*iter->second);
+    CHECK(rule_assignments[i] != nullptr);
+    ordered_rules.emplace_back(std::move(*(rule_assignments[i])));
   }
   return ordered_rules;
 }
@@ -183,7 +175,7 @@ int main(int argc, char** argv) {
     return a.valid_positions().size() < b.valid_positions().size();
   });
 
-  std::vector<Rule> ordered_rules = FindOrder(rules);
+  std::vector<Rule> ordered_rules = FindOrder(std::move(rules));
   std::int64_t product = 1;
   for (int rule_pos = 0; rule_pos < ordered_rules.size(); ++rule_pos) {
     if (absl::StartsWith(ordered_rules[rule_pos].field_name(), "departure")) {
