@@ -18,6 +18,12 @@
 #include "util/check.h"
 #include "util/io.h"
 
+// AVX512 is actually slower than AVX2 and SSE2 on my Skylake-X system, probably
+// due to CPU frequency effects.
+#define ENABLE_AVX512 0
+#define ENABLE_AVX2 1
+#define ENABLE_SSE2 1
+
 namespace {
 
 struct MiniCoords {
@@ -219,7 +225,7 @@ class SimdAdjacentCoords {
   VectorT adjacent_[kElements];
 };
 
-#if defined(__AVX512BW__)
+#if ENABLE_AVX512 && defined(__AVX512BW__)
 
 template <>
 class SimdTraits<__m512i> {
@@ -236,7 +242,7 @@ class SimdTraits<__m512i> {
 };
 using AdjacentCoords = SimdAdjacentCoords<__m512i>;
 
-#elif defined(__AVX2__)
+#elif ENABLE_AVX2 && defined(__AVX2__)
 
 template <>
 class SimdTraits<__m256i> {
@@ -253,7 +259,7 @@ class SimdTraits<__m256i> {
 };
 using AdjacentCoords = SimdAdjacentCoords<__m256i>;
 
-#elif defined(__SSE2__)
+#elif ENABLE_SSE2 && defined(__SSE2__)
 
 template <>
 class SimdTraits<__m128i> {
