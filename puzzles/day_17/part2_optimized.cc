@@ -26,6 +26,23 @@ struct Coords {
     return x == other.x && y == other.y && z == other.z && w == other.w;
   }
 
+  void InsertAdjacentInSet(absl::flat_hash_set<Coords>* adjacent_set) const {
+    for (int delta_x : {-1, 0, 1}) {
+      for (int delta_y : {-1, 0, 1}) {
+        for (int delta_z : {-1, 0, 1}) {
+          for (int delta_w : {-1, 0, 1}) {
+            if (delta_x != 0 || delta_y != 0 || delta_z != 0 || delta_w != 0) {
+              adjacent_set->emplace(Coords{.x = x + delta_x,
+                                           .y = y + delta_y,
+                                           .z = z + delta_z,
+                                           .w = w + delta_w});
+            }
+          }
+        }
+      }
+    }
+  }
+
   std::vector<Coords> Adjacent() const {
     std::vector<Coords> adjacent;
     adjacent.reserve(80);
@@ -64,18 +81,14 @@ class Grid {
   }
 
   void Step() {
-    absl::flat_hash_set<Coords> next_active_;
+    absl::flat_hash_set<Coords> candidate_active = active_;
     for (const Coords& active_cube : active_) {
-      if (NextActive(active_cube)) {
-        next_active_.insert(active_cube);
-      }
-      for (const Coords& adjacent : active_cube.Adjacent()) {
-        if (NextActive(adjacent)) {
-          next_active_.insert(adjacent);
-        }
-      }
+      active_cube.InsertAdjacentInSet(&candidate_active);
     }
-    active_ = std::move(next_active_);
+    absl::erase_if(candidate_active, [this](const Coords& candidate) {
+      return !NextActive(candidate);
+    });
+    active_ = std::move(candidate_active);
   }
 
   int NumActive() const { return active_.size(); }
