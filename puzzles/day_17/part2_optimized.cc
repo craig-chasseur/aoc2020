@@ -13,8 +13,6 @@
 #include <vector>
 
 #include "absl/container/flat_hash_set.h"
-#include "absl/time/clock.h"
-#include "absl/time/time.h"
 #include "util/check.h"
 #include "util/io.h"
 
@@ -339,16 +337,11 @@ int main(int argc, char** argv) {
   CHECK(2 == argc);
   std::vector<std::string> lines = aoc2020::ReadLinesFromFile(argv[1]);
 
-  const absl::Time pre = absl::Now();
-  for (int i = 0; i < 10; ++i) {
-    Grid grid(lines);
-    for (int i = 0; i < 6; ++i) {
-      grid.Step();
-    }
-    CHECK(1620 == grid.NumActive());
+  Grid grid(lines);
+  for (int i = 0; i < 6; ++i) {
+    grid.Step();
   }
-  const absl::Time post = absl::Now();
-  std::cout << (post - pre) << "\n";
+  std::cout << grid.NumActive() << "\n";
 
   return 0;
 }

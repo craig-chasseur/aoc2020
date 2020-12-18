@@ -25,7 +25,6 @@ cc_binary(
     srcs = ["part2_optimized.cc"],
     deps = [
         "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_absl//absl/time",
         "//util:check",
         "//util:io",
     ],
