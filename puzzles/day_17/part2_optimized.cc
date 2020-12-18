@@ -1,4 +1,3 @@
-#include <bits/stdint-uintn.h>
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -35,47 +34,62 @@ std::uint32_t InitCoords(std::int8_t x, std::int8_t y) {
   return rep.packed;
 }
 
-void InsertAdjacentInSet(const uint32_t coords,
-                         absl::flat_hash_set<std::uint32_t>* adjacent_set) {
-  for (int delta_x : {-1, 0, 1}) {
-    for (int delta_y : {-1, 0, 1}) {
-      for (int delta_z : {-1, 0, 1}) {
-        for (int delta_w : {-1, 0, 1}) {
-          if (delta_x != 0 || delta_y != 0 || delta_z != 0 || delta_w != 0) {
-            CoordsRep rep(coords);
-            rep.fields.x += delta_x;
-            rep.fields.y += delta_y;
-            rep.fields.z += delta_z;
-            rep.fields.w += delta_w;
-            adjacent_set->emplace(rep.packed);
-          }
-        }
-      }
-    }
-  }
-}
+class AdjacentCoords {
+ public:
+  explicit AdjacentCoords(std::uint32_t center) : center_(center) {}
 
-std::vector<std::uint32_t> GetAdjacent(const uint32_t coords) {
-  std::vector<std::uint32_t> adjacent;
-  adjacent.reserve(80);
-  for (int delta_x : {-1, 0, 1}) {
-    for (int delta_y : {-1, 0, 1}) {
-      for (int delta_z : {-1, 0, 1}) {
-        for (int delta_w : {-1, 0, 1}) {
-          if (delta_x != 0 || delta_y != 0 || delta_z != 0 || delta_w != 0) {
-            CoordsRep rep(coords);
-            rep.fields.x += delta_x;
-            rep.fields.y += delta_y;
-            rep.fields.z += delta_z;
-            rep.fields.w += delta_w;
-            adjacent.emplace_back(rep.packed);
+  void InsertInSet(absl::flat_hash_set<std::uint32_t>* adjacent_set) const {
+    for (int delta_x : {-1, 0, 1}) {
+      for (int delta_y : {-1, 0, 1}) {
+        for (int delta_z : {-1, 0, 1}) {
+          for (int delta_w : {-1, 0, 1}) {
+            if (delta_x != 0 || delta_y != 0 || delta_z != 0 || delta_w != 0) {
+              CoordsRep rep(center_);
+              rep.fields.x += delta_x;
+              rep.fields.y += delta_y;
+              rep.fields.z += delta_z;
+              rep.fields.w += delta_w;
+              adjacent_set->emplace(rep.packed);
+            }
           }
         }
       }
     }
   }
-  return adjacent;
-}
+
+  const std::uint32_t* begin() {
+    if (adjacent_.empty()) Populate();
+    return adjacent_.data();
+  }
+
+  const std::uint32_t* end() const {
+    return adjacent_.data() + 80;
+  }
+
+ private:
+  void Populate() {
+    adjacent_.reserve(80);
+    for (int delta_x : {-1, 0, 1}) {
+      for (int delta_y : {-1, 0, 1}) {
+        for (int delta_z : {-1, 0, 1}) {
+          for (int delta_w : {-1, 0, 1}) {
+            if (delta_x != 0 || delta_y != 0 || delta_z != 0 || delta_w != 0) {
+              CoordsRep rep(center_);
+              rep.fields.x += delta_x;
+              rep.fields.y += delta_y;
+              rep.fields.z += delta_z;
+              rep.fields.w += delta_w;
+              adjacent_.emplace_back(rep.packed);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  std::uint32_t center_;
+  std::vector<std::uint32_t> adjacent_;
+};
 
 class Grid {
  public:
@@ -96,7 +110,7 @@ class Grid {
   void Step() {
     absl::flat_hash_set<std::uint32_t> candidate_active = active_;
     for (const std::uint32_t active_cube : active_) {
-      InsertAdjacentInSet(active_cube, &candidate_active);
+      AdjacentCoords(active_cube).InsertInSet(&candidate_active);
     }
     absl::erase_if(candidate_active, [this](const std::uint32_t candidate) {
       return !NextActive(candidate);
@@ -109,7 +123,7 @@ class Grid {
  private:
   int CountAdjacent(const std::uint32_t coords) const {
     int adjacent = 0;
-    for (const std::uint32_t adjacent_cell : GetAdjacent(coords)) {
+    for (const std::uint32_t adjacent_cell : AdjacentCoords(coords)) {
       if (active_.contains(adjacent_cell)) {
         if (++adjacent == 4) return 4;
       }
