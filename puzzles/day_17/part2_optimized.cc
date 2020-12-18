@@ -84,7 +84,9 @@ class Grid {
   int CountAdjacent(const Coords& coords) const {
     int adjacent = 0;
     for (const Coords& adjacent_cell : coords.Adjacent()) {
-      adjacent += active_.contains(adjacent_cell);
+      if (active_.contains(adjacent_cell)) {
+        if (++adjacent == 4) return 4;
+      }
     }
     return adjacent;
   }
