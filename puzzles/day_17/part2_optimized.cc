@@ -1,4 +1,8 @@
-#if defined(__AVX512BW__)
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
+
+#if defined(__AVX512BW__) || defined (__AVX2__)
 #include <immintrin.h>
 #endif
 
@@ -215,7 +219,7 @@ class SimdAdjacentCoords {
   VectorT adjacent_[kElements];
 };
 
-#ifdef __AVX512BW__
+#if defined(__AVX512BW__)
 
 template <>
 class SimdTraits<__m512i> {
@@ -230,10 +234,43 @@ class SimdTraits<__m512i> {
     return _mm512_add_epi8(a, b);
   }
 };
-
 using AdjacentCoords = SimdAdjacentCoords<__m512i>;
 
-#else  // !__AVX512BW__
+#elif defined(__AVX2__)
+
+template <>
+class SimdTraits<__m256i> {
+ public:
+  SimdTraits() = delete;
+
+  static inline __m256i Splat(std::uint32_t value) {
+    return _mm256_set1_epi32(value);
+  }
+
+  static inline __m256i AddI8(__m256i a, __m256i b) {
+    return _mm256_add_epi8(a, b);
+  }
+};
+using AdjacentCoords = SimdAdjacentCoords<__m256i>;
+
+#elif defined(__SSE2__)
+
+template <>
+class SimdTraits<__m128i> {
+ public:
+  SimdTraits() = delete;
+
+  static inline __m128i Splat(std::uint32_t value) {
+    return _mm_set1_epi32(value);
+  }
+
+  static inline __m128i AddI8(__m128i a, __m128i b) {
+    return _mm_add_epi8(a, b);
+  }
+};
+using AdjacentCoords = SimdAdjacentCoords<__m128i>;
+
+#else
 
 using AdjacentCoords = ScalarAdjacentCoords;
 
