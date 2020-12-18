@@ -1,3 +1,7 @@
+#ifdef __AVX512BW__
+#include <immintrin.h>
+#endif
+
 #include <cstdint>
 #include <string>
 #include <utility>
@@ -33,6 +37,119 @@ std::uint32_t InitCoords(std::int8_t x, std::int8_t y) {
   rep.fields.y = y;
   return rep.packed;
 }
+
+#ifdef __AVX512BW__
+
+class AdjacentCoords {
+ public:
+  explicit AdjacentCoords(std::uint32_t center) {
+    const __m512i center_vec = _mm512_set1_epi32(center);
+    adjacent_[0] = _mm512_add_epi8(center_vec, kDeltas[0]);
+    adjacent_[1] = _mm512_add_epi8(center_vec, kDeltas[1]);
+    adjacent_[2] = _mm512_add_epi8(center_vec, kDeltas[2]);
+    adjacent_[3] = _mm512_add_epi8(center_vec, kDeltas[3]);
+    adjacent_[4] = _mm512_add_epi8(center_vec, kDeltas[4]);
+  }
+
+  void InsertInSet(absl::flat_hash_set<std::uint32_t>* adjacent_set) const {
+    adjacent_set->insert(begin(), end());
+  }
+
+  const std::uint32_t* begin() const {
+    return reinterpret_cast<const std::uint32_t*>(adjacent_);
+  }
+
+  const std::uint32_t* end() const {
+    return reinterpret_cast<const std::uint32_t*>(adjacent_) + 80;
+  }
+
+ private:
+  static inline const __m512i kDeltas[5] = {
+      _mm512_set_epi8(-1, -1, -1, -1,
+                      -1, -1, -1, 0,
+                      -1, -1, -1, 1,
+                      -1, -1, 0, -1,
+                      -1, -1, 0, 0,
+                      -1, -1, 0, 1,
+                      -1, -1, 1, -1,
+                      -1, -1, 1, 0,
+                      -1, -1, 1, 1,
+                      -1, 0, -1, -1,
+                      -1, 0, -1, 0,
+                      -1, 0, -1, 1,
+                      -1, 0, 0, -1,
+                      -1, 0, 0, 0,
+                      -1, 0, 0, 1,
+                      -1, 0, 1, -1),
+      _mm512_set_epi8(-1, 0, 1, 0,
+                      -1, 0, 1, 1,
+                      -1, 1, -1, -1,
+                      -1, 1, -1, 0,
+                      -1, 1, -1, 1,
+                      -1, 1, 0, -1,
+                      -1, 1, 0, 0,
+                      -1, 1, 0, 1,
+                      -1, 1, 1, -1,
+                      -1, 1, 1, 0,
+                      -1, 1, 1, 1,
+                      0, -1, -1, -1,
+                      0, -1, -1, 0,
+                      0, -1, -1, 1,
+                      0, -1, 0, -1,
+                      0, -1, 0, 0),
+      _mm512_set_epi8(0, -1, 0, 1,
+                      0, -1, 1, -1,
+                      0, -1, 1, 0,
+                      0, -1, 1, 1,
+                      0, 0, -1, -1,
+                      0, 0, -1, 0,
+                      0, 0, -1, 1,
+                      0, 0, 0, -1,
+                      0, 0, 0, 1,
+                      0, 0, 1, -1,
+                      0, 0, 1, 0,
+                      0, 0, 1, 1,
+                      0, 1, -1, -1,
+                      0, 1, -1, 0,
+                      0, 1, -1, 1,
+                      0, 1, 0, -1),
+      _mm512_set_epi8(0, 1, 0, 0,
+                      0, 1, 0, 1,
+                      0, 1, 1, -1,
+                      0, 1, 1, 0,
+                      0, 1, 1, 1,
+                      1, -1, -1, -1,
+                      1, -1, -1, 0,
+                      1, -1, -1, 1,
+                      1, -1, 0, -1,
+                      1, -1, 0, 0,
+                      1, -1, 0, 1,
+                      1, -1, 1, -1,
+                      1, -1, 1, 0,
+                      1, -1, 1, 1,
+                      1, 0, -1, -1,
+                      1, 0, -1, 0),
+      _mm512_set_epi8(1, 0, -1, 1,
+                      1, 0, 0, -1,
+                      1, 0, 0, 0,
+                      1, 0, 0, 1,
+                      1, 0, 1, -1,
+                      1, 0, 1, 0,
+                      1, 0, 1, 1,
+                      1, 1, -1, -1,
+                      1, 1, -1, 0,
+                      1, 1, -1, 1,
+                      1, 1, 0, -1,
+                      1, 1, 0, 0,
+                      1, 1, 0, 1,
+                      1, 1, 1, -1,
+                      1, 1, 1, 0,
+                      1, 1, 1, 1)};
+
+  __m512i adjacent_[5];
+};
+
+#else  // !__AVX512BW__
 
 class AdjacentCoords {
  public:
@@ -90,6 +207,8 @@ class AdjacentCoords {
   std::uint32_t center_;
   std::vector<std::uint32_t> adjacent_;
 };
+
+#endif  // __AVX512BW__
 
 class Grid {
  public:
