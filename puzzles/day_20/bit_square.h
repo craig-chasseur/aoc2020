@@ -11,6 +11,8 @@ namespace {
 
 class BitSquare {
  public:
+  BitSquare() = default;
+
   explicit BitSquare(std::size_t dim)
       : dim_(dim), rep_((dim * dim + 63) / 64, 0) {}
 
@@ -81,9 +83,11 @@ class BitSquare {
 
   std::vector<BitSquare> AllOrientations() const {
     std::vector<BitSquare> all_orientations;
-    all_orientations.reserve(16);
+    all_orientations.reserve(8);
     BitSquare base = *this;
-    for (int rotations = 0; rotations < 4; ++rotations) {
+    // Rotate 180 is equivalent to flipping both horizontal and vertical, so we
+    // only need to do one rotation in combination with all possible flips.
+    for (int rotations = 0; rotations < 2; ++rotations) {
       all_orientations.emplace_back(base);
       all_orientations.emplace_back(base.FlipHorizonal());
       all_orientations.emplace_back(base.FlipVertical());
@@ -91,6 +95,14 @@ class BitSquare {
       base = base.RotateClockwise();
     }
     return all_orientations;
+  }
+
+  std::size_t CountOnes() const {
+    std::size_t total = 0;
+    for (const std::uint64_t elem : rep_) {
+      total += __builtin_popcountll(elem);
+    }
+    return total;
   }
 
  private:
