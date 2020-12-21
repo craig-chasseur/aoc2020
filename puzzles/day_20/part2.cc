@@ -13,6 +13,8 @@
 #include "util/check.h"
 #include "util/io.h"
 
+using aoc2020::jigsaw::BitSquare;
+
 namespace {
 
 void DumpBitSquare(const BitSquare& bs) {

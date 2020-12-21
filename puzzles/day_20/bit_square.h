@@ -7,7 +7,7 @@
 
 #include "util/check.h"
 
-namespace {
+namespace aoc2020::jigsaw {
 
 class BitSquare {
  public:
@@ -117,6 +117,6 @@ class BitSquare {
   std::vector<std::uint64_t> rep_;
 };
 
-}  // namespace
+}  // namespace aoc2020::jigsaw
 
 #endif  // PUZZLES_DAY_20_BIT_SQUARE_H_
