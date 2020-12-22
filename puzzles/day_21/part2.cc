@@ -109,10 +109,8 @@ int main(int argc, char** argv) {
     foods.emplace_back(line);
   }
 
-  absl::flat_hash_set<std::string> ingredients;
   absl::flat_hash_set<std::string> allergen_names;
   for (const ParsedFood& food : foods) {
-    ingredients.insert(food.ingredients.begin(), food.ingredients.end());
     allergen_names.insert(food.allergens.begin(), food.allergens.end());
   }
 
