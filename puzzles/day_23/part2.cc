@@ -42,7 +42,7 @@ class Cups {
   }
 
   std::int64_t AfterOneProduct() const {
-    auto one_iter = std::find(cups_.begin(), cups_.end(), 1);
+    auto one_iter = lookup_table_.find(1)->second;
     std::int64_t product = 1;
 
     if (++one_iter == cups_.end()) one_iter = cups_.begin();
